@@ -22,5 +22,5 @@
 
     <style name="Theme.FoodApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="Theme.FoodApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Theme.FoodApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark" />
 </resources>

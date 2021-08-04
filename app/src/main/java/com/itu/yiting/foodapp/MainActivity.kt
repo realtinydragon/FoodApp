@@ -7,23 +7,26 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.Telephony
-import android.telephony.SmsManager
-import android.view.*
-import android.widget.EditText
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
-import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
 import com.itu.yiting.foodapp.databinding.ActivityMainBinding
 import com.squareup.picasso.Picasso
@@ -38,8 +41,18 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    private val registerTakePicture = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { isSuccess ->
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Firebase.auth.currentUser === null) {
+            this.redirectToLogin()
+            return
+        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -82,7 +95,14 @@ class MainActivity : AppCompatActivity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_add_food -> true
+            R.id.action_logout -> {
+                this.logout()
+                true
+            }
+            R.id.action_add_food -> {
+
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -101,21 +121,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-//    private fun initData() {
-//        val foodlist = ArrayList<Food>()
-//        foodlist.add(Food("Coffee","Coffee", "Coffe Descp", "https://images.immediate.co.uk/production/volatile/sites/30/2020/08/flat-white-3402c4f.jpg?quality=90&resize=960,872"))
-//        foodlist.add(Food("Icecream", "Icecream", "Icecream Descp", "https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/easiest-ever-fruit-and-coconut-ice-cream-1589550075.jpg"))
-//        foodlist.add(Food("Honey", "Honey", "Honey Descp", "https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/gettyimages-183354852-1558479028.jpg"))
-//        foodlist.add(Food("French Fry", "French Fry", "French Fry Descp", "https://livinginyellow.com/wp-content/uploads/2020/03/French-Fry-500x375.png"))
-//
-//        for (food in foodlist) {
-//            val foodDb = database.child(food.id)
-//            foodDb.child("name").setValue(food.name)
-//            foodDb.child("desc").setValue(food.des)
-//            foodDb.child("imageUrl").setValue(food.imageUrl)
-//        }
-//    }
 
     private fun startSharedFoodDialog(phoneNumber: String, foodId: String) {
         val li = LayoutInflater.from(this)
@@ -179,6 +184,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
         registerReceiver(bc, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+    }
+
+    private fun redirectToLogin() {
+        this.startActivity(Intent(this.applicationContext, LoginActivity::class.java))
+        this.finish()
+    }
+
+    private fun logout() {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestProfile()
+            .requestEmail()
+            .build()
+
+        GoogleSignIn.getClient(this, gso).signOut().addOnCompleteListener {
+            Firebase.auth.signOut()
+            this.redirectToLogin()
+        }
     }
 
 }
